@@ -411,7 +411,7 @@ class FakeNewsDataset(Dataset):
         self.len = len(self.df)
         self.tokenizer = tokenizer  # BERT tokenizer
 
-    # 定義回傳一筆訓練 / 測試數據的函式
+    
     def __getitem__(self, idx):
         if self.mode == 'test':
             statement, label = self.df.iloc[idx, :].values
@@ -420,22 +420,22 @@ class FakeNewsDataset(Dataset):
             statement, label = self.df.iloc[idx, :].values
             label_tensor = torch.tensor(label)
 
-        # 建立第一個句子的 BERT tokens 並加入分隔符號 [SEP]
+        # BERT tokens[SEP]
         word_pieces = ['[CLS]']
         statement = self.tokenizer.tokenize(statement)
         word_pieces += statement + ['[SEP]']
         len_st = len(word_pieces)
 
-#         # 第二個句子的 BERT tokens
+#         # BERT tokens
 #         tokens_b = self.tokenizer.tokenize(text_b)
 #         word_pieces += tokens_b + ["[SEP]"]
 #         len_b = len(word_pieces) - len_a
 
-        # 將整個 token 序列轉換成索引序列
+        #token 
         ids = self.tokenizer.convert_tokens_to_ids(word_pieces)
         tokens_tensor = torch.tensor(ids)
 
-        # 將第一句包含 [SEP] 的 token 位置設為 0
+        # [SEP] token 
         segments_tensor = torch.tensor([0] * len_st, dtype=torch.long)
 
         return (tokens_tensor, segments_tensor, label_tensor)
@@ -455,20 +455,20 @@ print('testset size: ',testset.__len__())
 
 """## Sampling and Observing Tensors"""
 
-# 選擇第一個樣本
+# 
 sample_idx = 0
 
-# 將原始文本拿出做比較
+# 
 statement, label = trainset.df.iloc[sample_idx].values
 
-# 利用剛剛建立的 Dataset 取出轉換後的 id tensors
+#Dataset id tensors
 tokens_tensor, segments_tensor, label_tensor = trainset[sample_idx]
 
-# 將 tokens_tensor 還原成文本
+#tokens_tensor 
 tokens = tokenizer.convert_ids_to_tokens(tokens_tensor.tolist())
 combined_text = " ".join(tokens)
 
-# 渲染前後差異，毫無反應就是個 print。可以直接看輸出結果
+#  print
 print(f"""
 original_statement:
 {statement}
@@ -496,17 +496,17 @@ label_tensor:
 from torch.utils.data import DataLoader
 from torch.nn.utils.rnn import pad_sequence
 
-# 這個函式的輸入 `samples` 是一個 list，裡頭的每個 element 都是
-# 剛剛定義的 `FakeNewsDataset` 回傳的一個樣本，每個樣本都包含 3 tensors：
+# `samples` list，element 
+#  `FakeNewsDataset` 3 tensors：
 # - tokens_tensor
 # - segments_tensor
 # - label_tensor
-# 它會對前兩個 tensors 作 zero padding，並產生前面說明過的 masks_tensors
+#tensors zero padding，masks_tensors
 def create_mini_batch(samples):
     tokens_tensors = [s[0] for s in samples]
     segments_tensors = [s[1] for s in samples]
 
-    # 測試集有 labels
+    #  labels
     if samples[0][2] is not None:
         label_ids = torch.stack([s[2] for s in samples])
     else:
@@ -524,8 +524,8 @@ def create_mini_batch(samples):
     return tokens_tensors, segments_tensors, masks_tensors, label_ids
 
 
-# 初始化一個每次回傳 16 個訓練樣本的 DataLoader
-# 利用 `collate_fn` 將 list of samples 合併成一個 mini-batch 是關鍵
+# DataLoader
+# `collate_fn` 將 list of samples  mini-batch 
 BATCH_SIZE = 16
 trainloader = DataLoader(trainset, batch_size=BATCH_SIZE, collate_fn=create_mini_batch)
 valloader = DataLoader(valset, batch_size=BATCH_SIZE, collate_fn=create_mini_batch)
@@ -562,7 +562,7 @@ model = BertForSequenceClassification.from_pretrained(
 
 clear_output()
 
-# high-level 顯示此模型裡的 modules
+# high-level modules
 print("""
 name             module
 -----------------------""")
@@ -597,7 +597,6 @@ for epoch in range(NUM_EPOCHS):
     for batch_idx, data in enumerate(loop):
         tokens_tensors, segments_tensors, masks_tensors, labels = [t.to(device) for t in data]
 
-        # 將參數梯度歸零
         optimizer.zero_grad()
 
         outputs = model(input_ids=tokens_tensors,
@@ -613,7 +612,7 @@ for epoch in range(NUM_EPOCHS):
         _, pred = torch.max(logits.data, 1)
         train_acc = accuracy_score(pred.cpu().tolist() , labels.cpu().tolist())
 
-        # 紀錄當前 batch loss
+        #  batch loss
         train_loss += loss.item()
 
         # if batch_idx == len(trainloader)-1:
